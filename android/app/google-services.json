@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "895140321046",
+    "project_id": "doro-18280",
+    "storage_bucket": "doro-18280.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:895140321046:android:56bffab7ebbdbf74eae237",
+        "android_client_info": {
+          "package_name": "com.doro.doro"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAWvYgklqMh6sd4rryG0fGdwn6Y0yKmLlY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

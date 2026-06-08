@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\hanju\\\\workspace\\\\doro\" -Force)",
+      "Bash(Select-Object Name, PSIsContainer)",
+      "Bash(New-Item -ItemType Directory -Force \"c:\\\\Users\\\\hanju\\\\workspace\\\\doro\\\\.claude\\\\rules\")",
+      "Bash(Out-Null)",
+      "Bash(New-Item -ItemType Directory -Force \"c:\\\\Users\\\\hanju\\\\workspace\\\\doro\\\\docs\\\\plans\")",
+      "Bash(Write-Output \"dirs created\")"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\hanju\\workspace\\doro\\.claude"
+    ]
+  }
+}
