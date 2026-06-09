@@ -6,7 +6,8 @@
       "Bash(New-Item -ItemType Directory -Force \"c:\\\\Users\\\\hanju\\\\workspace\\\\doro\\\\.claude\\\\rules\")",
       "Bash(Out-Null)",
       "Bash(New-Item -ItemType Directory -Force \"c:\\\\Users\\\\hanju\\\\workspace\\\\doro\\\\docs\\\\plans\")",
-      "Bash(Write-Output \"dirs created\")"
+      "Bash(Write-Output \"dirs created\")",
+      "Bash(flutter pub *)"
     ],
     "additionalDirectories": [
       "c:\\Users\\hanju\\workspace\\doro\\.claude"
