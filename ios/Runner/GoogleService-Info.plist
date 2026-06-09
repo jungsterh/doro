@@ -2,6 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CLIENT_ID</key>
+	<string>895140321046-vsoubbfrr0a92adqhej6tj2q4j15n86t.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.895140321046-vsoubbfrr0a92adqhej6tj2q4j15n86t</string>
 	<key>API_KEY</key>
 	<string>AIzaSyB5YLzET8Zj_z0mRSpMMqrQZ_8D8nXqUPA</string>
 	<key>GCM_SENDER_ID</key>
@@ -9,7 +13,7 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.doro.doro</string>
+	<string>com.elanordigital.doro</string>
 	<key>PROJECT_ID</key>
 	<string>doro-18280</string>
 	<key>STORAGE_BUCKET</key>
@@ -25,6 +29,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:895140321046:ios:fa715fe6632325e9eae237</string>
+	<string>1:895140321046:ios:80ea90f1162db6a1eae237</string>
 </dict>
 </plist>
