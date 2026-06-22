@@ -1,11 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide User;
-import 'package:supabase_flutter/supabase_flutter.dart' as supabase;
-import '../core/constants/app_constants.dart';
 import '../models/user.dart';
+import 'premium_provider.dart';
 
 class AuthState {
   final User? user;
@@ -35,13 +33,25 @@ class AuthState {
 
 class AuthNotifier extends StateNotifier<AuthState> {
   final Supabase? _supabase;
+  final Ref? _ref;
 
-  AuthNotifier(Supabase supabase) : _supabase = supabase, super(AuthState()) {
+  AuthNotifier(Supabase supabase, Ref ref)
+      : _supabase = supabase,
+        _ref = ref,
+        super(AuthState()) {
     _initializeAuthState();
   }
 
   @visibleForTesting
-  AuthNotifier.unauthenticated() : _supabase = null, super(AuthState());
+  AuthNotifier.unauthenticated()
+      : _supabase = null,
+        _ref = null,
+        super(AuthState());
+
+  /// Updates the local premium flag (SharedPreferences + provider state).
+  Future<void> _setLocalPremium(bool value) async {
+    await _ref?.read(premiumProvider.notifier).setPremium(value);
+  }
 
   /// Initialize auth state from Supabase session
   Future<void> _initializeAuthState() async {
@@ -73,11 +83,32 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       state = state.copyWith(isLoading: true, error: null);
 
-      final response = await _supabase!.client
+      var response = await _supabase!.client
           .from('users')
           .select()
           .eq('id', userId)
-          .single();
+          .maybeSingle();
+
+      if (response == null) {
+        // Row doesn't exist yet — create it then reload.
+        final supabaseUser = _supabase.client.auth.currentUser;
+        if (supabaseUser != null) {
+          await _createUserRecord(
+            supabaseUser.id,
+            supabaseUser.email ?? '',
+            supabaseUser.userMetadata?['name'] as String?,
+          );
+          response = await _supabase.client
+              .from('users')
+              .select()
+              .eq('id', userId)
+              .maybeSingle();
+        }
+        if (response == null) {
+          state = state.copyWith(isLoading: false);
+          return;
+        }
+      }
 
       var user = User.fromJson(response);
 
@@ -98,13 +129,21 @@ class AuthNotifier extends StateNotifier<AuthState> {
           'subscription_ended_at': endedAt.toIso8601String(),
         }).eq('id', userId);
 
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setBool(AppConstants.prefIsPremium, false);
+        await _setLocalPremium(false);
 
         user = user.copyWith(
           isPremium: false,
           subscriptionEndedAt: endedAt,
         );
+      }
+
+      // Sync the local premium flag upward from the backend. This covers
+      // entitlements that never go through the purchase flow: trials,
+      // promo codes, and manual grants in the Supabase dashboard.
+      // Downgrades are handled only by the expiry block above and by
+      // PurchaseService, so a signed-out purchase is never clobbered here.
+      if (user.isPremium) {
+        await _setLocalPremium(true);
       }
 
       state = state.copyWith(user: user, isLoading: false);
@@ -260,5 +299,5 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
   final supabase = Supabase.instance;
-  return AuthNotifier(supabase);
+  return AuthNotifier(supabase, ref);
 });

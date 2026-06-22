@@ -17,11 +17,19 @@ class _PremiumPageState extends ConsumerState<PremiumPage> {
   List<ProductDetails> _products = [];
   bool _loadingProducts = true;
   String? _purchasingId;
+  final _promoController = TextEditingController();
+  bool _redeeming = false;
 
   @override
   void initState() {
     super.initState();
     _loadProducts();
+  }
+
+  @override
+  void dispose() {
+    _promoController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadProducts() async {
@@ -40,6 +48,23 @@ class _PremiumPageState extends ConsumerState<PremiumPage> {
     final service = ref.read(purchaseServiceProvider);
     await service.purchase(product);
     if (mounted) setState(() => _purchasingId = null);
+  }
+
+  Future<void> _redeemPromo() async {
+    final code = _promoController.text.trim();
+    if (code.isEmpty) return;
+    setState(() => _redeeming = true);
+    final error =
+        await ref.read(purchaseServiceProvider).redeemPromoCode(code);
+    if (!mounted) return;
+    setState(() => _redeeming = false);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(error ?? 'Code redeemed — Premium unlocked!'),
+        backgroundColor: error == null ? AppColors.success : AppColors.error,
+      ),
+    );
+    if (error == null) _promoController.clear();
   }
 
   Future<void> _restore() async {
@@ -104,6 +129,11 @@ class _PremiumPageState extends ConsumerState<PremiumPage> {
             else
               ..._buildPurchaseOptions(accent),
 
+            if (!isPremium) ...[
+              const SizedBox(height: 8),
+              _buildPromoSection(accent),
+            ],
+
             const SizedBox(height: 20),
             Center(
               child: Text(
@@ -166,6 +196,65 @@ class _PremiumPageState extends ConsumerState<PremiumPage> {
           ),
         )
         .toList();
+  }
+
+  Widget _buildPromoSection(Color accent) {
+    return GlassCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Have a promo code?',
+            style: Theme.of(context)
+                .textTheme
+                .titleSmall
+                ?.copyWith(fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _promoController,
+                  textCapitalization: TextCapitalization.characters,
+                  autocorrect: false,
+                  decoration: InputDecoration(
+                    hintText: 'Enter code',
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 12),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  onSubmitted: (_) => _redeemPromo(),
+                ),
+              ),
+              const SizedBox(width: 12),
+              FilledButton(
+                onPressed: _redeeming ? null : _redeemPromo,
+                style: FilledButton.styleFrom(
+                  backgroundColor: accent,
+                  foregroundColor: Colors.black,
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 12),
+                ),
+                child: _redeeming
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.black,
+                        ),
+                      )
+                    : const Text('Redeem'),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 
   List<Widget> _buildPurchaseOptions(Color accent) {

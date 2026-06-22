@@ -44,3 +44,15 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Supabase local cache
+supabase/.temp/
+
+# Android signing & secrets
+android/key.properties
+*.keystore
+*.jks
+
+# Firebase / Google config — contain API keys and OAuth client IDs
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist

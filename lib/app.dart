@@ -16,16 +16,18 @@ class DoroApp extends ConsumerWidget {
     final themeMode = ref.watch(themeProvider);
     final onboardingDone = ref.watch(onboardingProvider);
     final authState = ref.watch(authProvider);
+    final trialBenefitSeen = ref.watch(trialBenefitSeenProvider);
 
     // Router logic:
     // 1. If onboarding not done → show OnboardingPage
-    // 2. If just signed in (authenticated but no onboarding flag yet) → show SubscriptionBenefitPage
+    // 2. If authenticated with active trial and haven't seen the benefit page yet → show it once
     // 3. Otherwise → show HomePage
     Widget home;
     if (!onboardingDone) {
       home = const OnboardingPage();
-    } else if (authState.isAuthenticated && authState.user?.isTrialActive == true) {
-      // Show subscription benefits page if user just signed up with active trial
+    } else if (authState.isAuthenticated &&
+        authState.user?.isTrialActive == true &&
+        !trialBenefitSeen) {
       home = const SubscriptionBenefitPage();
     } else {
       home = const HomePage();

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,6 +6,7 @@ import '../../core/theme/app_colors.dart';
 import '../../providers/display_provider.dart';
 import '../../providers/lock_mode_provider.dart';
 import '../../providers/session_provider.dart';
+import '../../services/sound_service.dart';
 import '../summary/summary_page.dart';
 import 'widgets/control_drawer.dart';
 import 'widgets/flip_clock.dart';
@@ -19,16 +21,23 @@ class TimerPage extends ConsumerStatefulWidget {
 class _TimerPageState extends ConsumerState<TimerPage>
     with WidgetsBindingObserver {
   bool _edgeHintVisible = false;
+  final _sound = SoundService();
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     Future(() => ref.read(lockModeProvider.notifier).onSessionStart());
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.landscapeLeft,
-      DeviceOrientation.landscapeRight,
-    ]);
+    // Defer orientation lock until after the navigation transition finishes
+    // to avoid the gray-overlay freeze on Android (Samsung One UI in particular).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        SystemChrome.setPreferredOrientations([
+          DeviceOrientation.landscapeLeft,
+          DeviceOrientation.landscapeRight,
+        ]);
+      }
+    });
     // Show edge hint briefly then fade
     Future.delayed(const Duration(milliseconds: 800), () {
       if (mounted) setState(() => _edgeHintVisible = true);
@@ -41,6 +50,7 @@ class _TimerPageState extends ConsumerState<TimerPage>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _sound.dispose();
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
@@ -66,6 +76,12 @@ class _TimerPageState extends ConsumerState<TimerPage>
   Widget build(BuildContext context) {
     final sessionState = ref.watch(activeSessionProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    ref.listen<ActiveSessionState>(activeSessionProvider, (_, next) {
+      if (next.isCountdownComplete && mounted) {
+        _autoComplete();
+      }
+    });
 
     return PopScope(
       canPop: false,
@@ -111,7 +127,7 @@ class _TimerPageState extends ConsumerState<TimerPage>
                   const SizedBox(height: 24),
 
                   FlipClock(
-                    elapsed: sessionState.elapsed,
+                    elapsed: sessionState.remaining ?? sessionState.elapsed,
                     useFlip: ref.watch(displayModeProvider) == DisplayMode.flip,
                   ),
 
@@ -144,13 +160,13 @@ class _TimerPageState extends ConsumerState<TimerPage>
             ),
 
             // Edge hint indicator
-            AnimatedOpacity(
-              opacity: _edgeHintVisible ? 1.0 : 0.0,
-              duration: const Duration(milliseconds: 400),
-              child: Positioned(
-                right: 0,
-                top: 0,
-                bottom: 0,
+            Positioned(
+              right: 0,
+              top: 0,
+              bottom: 0,
+              child: AnimatedOpacity(
+                opacity: _edgeHintVisible ? 1.0 : 0.0,
+                duration: const Duration(milliseconds: 400),
                 child: Container(
                   width: 28,
                   decoration: BoxDecoration(
@@ -179,6 +195,19 @@ class _TimerPageState extends ConsumerState<TimerPage>
       ),
     ),
     );
+  }
+
+  Future<void> _autoComplete() async {
+    unawaited(_sound.playDone());
+    final session =
+        await ref.read(activeSessionProvider.notifier).stopSession('');
+    ref.read(lastCompletedSessionProvider.notifier).state = session;
+    if (mounted) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => SummaryPage(session: session)),
+      );
+    }
   }
 
   Future<void> _confirmStop() async {

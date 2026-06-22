@@ -1,6 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/task.dart';
 import '../services/task_service.dart';
+import 'sync_provider.dart';
 
 final taskServiceProvider = Provider<TaskService>((ref) => TaskService());
 
@@ -25,6 +27,7 @@ class TasksNotifier extends AsyncNotifier<List<Task>> {
     final service = ref.read(taskServiceProvider);
     final task = await service.createTask(name, colorHex);
     state = AsyncData([...state.valueOrNull ?? [], task]);
+    _syncInBackground();
     return task;
   }
 
@@ -34,6 +37,13 @@ class TasksNotifier extends AsyncNotifier<List<Task>> {
     state = AsyncData(
       (state.valueOrNull ?? []).where((t) => t.id != id).toList(),
     );
+    _syncInBackground();
+  }
+
+  void _syncInBackground() {
+    ref.read(syncServiceProvider).syncToSupabase().catchError(
+          (Object e) => debugPrint('Background sync error: $e'),
+        );
   }
 
   Future<Task?> getTaskById(String id) async {

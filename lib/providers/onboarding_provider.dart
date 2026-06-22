@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 const _onboardingDoneKey = 'onboarding_done';
+const _trialBenefitSeenKey = 'trial_benefit_seen';
 
 class OnboardingNotifier extends StateNotifier<bool> {
   OnboardingNotifier() : super(false) {
@@ -46,3 +47,34 @@ final onboardingProvider =
     StateNotifierProvider<OnboardingNotifier, bool>((ref) {
   return OnboardingNotifier();
 });
+
+// Tracks whether the trial-benefit page has been shown this install.
+class TrialBenefitSeenNotifier extends StateNotifier<bool> {
+  TrialBenefitSeenNotifier() : super(false) {
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      state = prefs.getBool(_trialBenefitSeenKey) ?? false;
+    } catch (e) {
+      debugPrint('Error loading trial benefit seen: $e');
+    }
+  }
+
+  Future<void> markSeen() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_trialBenefitSeenKey, true);
+      state = true;
+    } catch (e) {
+      debugPrint('Error saving trial benefit seen: $e');
+    }
+  }
+}
+
+final trialBenefitSeenProvider =
+    StateNotifierProvider<TrialBenefitSeenNotifier, bool>(
+  (ref) => TrialBenefitSeenNotifier(),
+);

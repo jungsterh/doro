@@ -1,10 +1,12 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/constants/app_constants.dart';
 import '../models/session.dart';
 import '../models/task.dart';
 import '../providers/date_range_provider.dart';
 import '../providers/premium_provider.dart';
+import '../providers/sync_provider.dart';
 import '../services/session_service.dart';
 
 final sessionServiceProvider =
@@ -16,29 +18,44 @@ class ActiveSessionState {
   final Task? task;
   final Duration elapsed;
   final SessionState sessionState;
+  final Duration? targetDuration;
 
   const ActiveSessionState({
     this.session,
     this.task,
     this.elapsed = Duration.zero,
     this.sessionState = SessionState.idle,
+    this.targetDuration,
   });
 
   bool get isActive => sessionState != SessionState.idle;
   bool get isRunning => sessionState == SessionState.running;
   bool get isPaused => sessionState == SessionState.paused;
 
+  /// Remaining time for Pomodoro mode; null in free-run mode.
+  Duration? get remaining {
+    if (targetDuration == null) return null;
+    final r = targetDuration! - elapsed;
+    return r.isNegative ? Duration.zero : r;
+  }
+
+  bool get isCountdownComplete =>
+      targetDuration != null && elapsed >= targetDuration!;
+
   ActiveSessionState copyWith({
     Session? session,
     Task? task,
     Duration? elapsed,
     SessionState? sessionState,
+    Duration? targetDuration,
+    bool clearTarget = false,
   }) {
     return ActiveSessionState(
       session: session ?? this.session,
       task: task ?? this.task,
       elapsed: elapsed ?? this.elapsed,
       sessionState: sessionState ?? this.sessionState,
+      targetDuration: clearTarget ? null : (targetDuration ?? this.targetDuration),
     );
   }
 }
@@ -51,13 +68,14 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
 
   SessionService get _service => _ref.read(sessionServiceProvider);
 
-  void startSession(Task task) {
+  void startSession(Task task, {Duration? targetDuration}) {
     final session = _service.startSession(task);
     state = ActiveSessionState(
       session: session,
       task: task,
       elapsed: Duration.zero,
       sessionState: SessionState.running,
+      targetDuration: targetDuration,
     );
     _startTimer();
   }
@@ -80,7 +98,9 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
     _timer = null;
     final completed = await _service.stopSession(comment);
     state = const ActiveSessionState();
-    // Refresh sessions list
+    _ref.read(syncServiceProvider).syncToSupabase().catchError(
+          (Object e) => debugPrint('Background sync error: $e'),
+        );
     return completed;
   }
 

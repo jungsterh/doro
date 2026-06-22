@@ -7,12 +7,25 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:895140321046:android:56bffab7ebbdbf74eae237",
+        "mobilesdk_app_id": "1:895140321046:android:b3104e76bdfa099beae237",
         "android_client_info": {
-          "package_name": "com.doro.doro"
+          "package_name": "com.elanordigital.doro"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "895140321046-bdbehnpbi4b02ku8e7a5uqndvq5g20fg.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.elanordigital.doro",
+            "certificate_hash": "24c399379e53334c967125cff8019a14a9e3a068"
+          }
+        },
+        {
+          "client_id": "895140321046-s0scmo82es05dt50csffj0tmdah267bl.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyAWvYgklqMh6sd4rryG0fGdwn6Y0yKmLlY"
@@ -20,7 +33,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "895140321046-s0scmo82es05dt50csffj0tmdah267bl.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "895140321046-vsoubbfrr0a92adqhej6tj2q4j15n86t.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.elanordigital.doro"
+              }
+            }
+          ]
         }
       }
     }

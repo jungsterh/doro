@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/app_colors.dart';
+import '../../providers/onboarding_provider.dart';
 import '../../providers/premium_provider.dart';
 import '../../widgets/glass_button.dart';
 
@@ -120,12 +121,7 @@ class _SubscriptionBenefitPageState
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton(
-                    onPressed: _isLoading
-                        ? null
-                        : () {
-                            Navigator.of(context)
-                                .popUntil((route) => route.isFirst);
-                          },
+                    onPressed: _isLoading ? null : _continueToApp,
                     child: const Text('Continue to App'),
                   ),
                 ),
@@ -150,12 +146,15 @@ class _SubscriptionBenefitPageState
     );
   }
 
+  Future<void> _continueToApp() async {
+    await ref.read(trialBenefitSeenProvider.notifier).markSeen();
+  }
+
   Future<void> _startFreeTrial() async {
     setState(() => _isLoading = true);
     try {
       await ref.read(premiumProvider.notifier).setPremium(true);
-      if (!mounted) return;
-      Navigator.of(context).pop();
+      await ref.read(trialBenefitSeenProvider.notifier).markSeen();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

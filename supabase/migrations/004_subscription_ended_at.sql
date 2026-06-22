@@ -1,10 +1,10 @@
 -- Track when a user's premium subscription ended.
 -- Used to enforce the 1-year remote-data retention window before deletion.
 ALTER TABLE public.users
-  ADD COLUMN subscription_ended_at TIMESTAMPTZ DEFAULT NULL;
+  ADD COLUMN IF NOT EXISTS subscription_ended_at TIMESTAMPTZ DEFAULT NULL;
 
 -- Optional: index to make the daily cleanup query efficient.
-CREATE INDEX idx_users_subscription_ended_at
+CREATE INDEX IF NOT EXISTS idx_users_subscription_ended_at
   ON public.users (subscription_ended_at)
   WHERE subscription_ended_at IS NOT NULL;
 

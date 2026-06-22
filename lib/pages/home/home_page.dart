@@ -5,6 +5,7 @@ import '../../core/theme/app_colors.dart';
 import '../../providers/date_range_provider.dart';
 import '../../providers/premium_provider.dart';
 import '../../providers/session_provider.dart';
+import '../../providers/sync_provider.dart';
 import '../../providers/task_provider.dart';
 import '../../services/export_service.dart';
 import '../../widgets/glass_card.dart';
@@ -22,14 +23,31 @@ class HomePage extends ConsumerStatefulWidget {
   ConsumerState<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends ConsumerState<HomePage> {
+class _HomePageState extends ConsumerState<HomePage>
+    with WidgetsBindingObserver {
   final PageController _pageController = PageController();
   int _currentPage = 0;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _pageController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      ref.read(syncServiceProvider).syncFromSupabase().catchError(
+            (Object e) => debugPrint('Background sync error on resume: $e'),
+          );
+    }
   }
 
   @override
@@ -168,6 +186,7 @@ class _DashboardPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isPremium = ref.watch(premiumProvider);
     final tasksAsync = ref.watch(tasksProvider);
+    final rangeState = ref.watch(dateRangeProvider);
     final sessionsAsync =
         isPremium ? ref.watch(filteredSessionsProvider) : ref.watch(sessionsProvider);
 
@@ -227,7 +246,7 @@ class _DashboardPage extends ConsumerWidget {
                     error: (e, _) => Center(child: Text('Error: $e')),
                     data: (sessions) => GlassCard(
                       margin: const EdgeInsets.only(bottom: 16),
-                      child: WeeklyBarChart(sessions: sessions, tasks: tasks),
+                      child: WeeklyBarChart(sessions: sessions, tasks: tasks, rangeState: rangeState),
                     ),
                   ),
                 ),

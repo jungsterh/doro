@@ -10,50 +10,58 @@ ALTER TABLE public.sessions ENABLE ROW LEVEL SECURITY;
 -- =====================
 -- tasks policies
 -- =====================
+DROP POLICY IF EXISTS "tasks: select own" ON public.tasks;
 CREATE POLICY "tasks: select own"
   ON public.tasks FOR SELECT
   TO authenticated
-  USING (auth.uid() = user_id);
+  USING ((SELECT auth.uid()) = user_id);
 
+DROP POLICY IF EXISTS "tasks: insert own" ON public.tasks;
 CREATE POLICY "tasks: insert own"
   ON public.tasks FOR INSERT
   TO authenticated
-  WITH CHECK (auth.uid() = user_id);
+  WITH CHECK ((SELECT auth.uid()) = user_id);
 
+DROP POLICY IF EXISTS "tasks: update own" ON public.tasks;
 CREATE POLICY "tasks: update own"
   ON public.tasks FOR UPDATE
   TO authenticated
-  USING (auth.uid() = user_id)
-  WITH CHECK (auth.uid() = user_id);
+  USING ((SELECT auth.uid()) = user_id)
+  WITH CHECK ((SELECT auth.uid()) = user_id);
 
+DROP POLICY IF EXISTS "tasks: delete own" ON public.tasks;
 CREATE POLICY "tasks: delete own"
   ON public.tasks FOR DELETE
   TO authenticated
-  USING (auth.uid() = user_id);
+  USING ((SELECT auth.uid()) = user_id);
 
 -- =====================
 -- sessions policies
 -- =====================
+DROP POLICY IF EXISTS "sessions: select own" ON public.sessions;
 CREATE POLICY "sessions: select own"
   ON public.sessions FOR SELECT
   TO authenticated
-  USING (auth.uid() = user_id);
+  USING ((SELECT auth.uid()) = user_id);
 
+DROP POLICY IF EXISTS "sessions: insert own" ON public.sessions;
 CREATE POLICY "sessions: insert own"
   ON public.sessions FOR INSERT
   TO authenticated
-  WITH CHECK (auth.uid() = user_id);
+  WITH CHECK ((SELECT auth.uid()) = user_id);
 
+DROP POLICY IF EXISTS "sessions: update own" ON public.sessions;
 CREATE POLICY "sessions: update own"
   ON public.sessions FOR UPDATE
   TO authenticated
-  USING (auth.uid() = user_id)
-  WITH CHECK (auth.uid() = user_id);
+  USING ((SELECT auth.uid()) = user_id)
+  WITH CHECK ((SELECT auth.uid()) = user_id);
 
+DROP POLICY IF EXISTS "sessions: delete own" ON public.sessions;
 CREATE POLICY "sessions: delete own"
   ON public.sessions FOR DELETE
   TO authenticated
-  USING (auth.uid() = user_id);
+  USING ((SELECT auth.uid()) = user_id);
 
 -- =====================
 -- Optional: allow service_role to bypass RLS for admin tasks

@@ -86,7 +86,7 @@ void main() {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
 
-    await Supabase.initialize(url: supabaseUrl, anonKey: supabaseKey);
+    await Supabase.initialize(url: supabaseUrl, publishableKey: supabaseKey);
     supabaseClient = Supabase.instance.client;
   });
 

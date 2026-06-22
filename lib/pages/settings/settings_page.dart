@@ -5,10 +5,10 @@ import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_colors.dart';
 import '../../providers/display_provider.dart';
 import '../../providers/premium_provider.dart';
+import '../../providers/sync_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/purchase_service.dart';
-import '../../services/sync_service.dart';
 import '../../widgets/glass_card.dart';
 import '../auth/login_page.dart';
 import '../premium/premium_page.dart';
@@ -22,7 +22,6 @@ class SettingsPage extends ConsumerStatefulWidget {
 
 class _SettingsPageState extends ConsumerState<SettingsPage> {
   bool _syncEnabled = false;
-  final _syncService = SyncService();
 
   @override
   void initState() {
@@ -177,7 +176,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             // Cloud Sync (premium only)
             if (isPremium) ...[
               _SectionHeader(title: 'Cloud Sync'),
-              if (!_syncService.isConfigured)
+              if (!ref.read(syncServiceProvider).isConfigured)
                 GlassCard(
                   margin: const EdgeInsets.only(bottom: 8),
                   child: Row(
@@ -259,7 +258,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     ScaffoldMessenger.of(context)
         .showSnackBar(const SnackBar(content: Text('Syncing…')));
     try {
-      await _syncService.syncToSupabase();
+      await ref.read(syncServiceProvider).syncToSupabase();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(

@@ -12,6 +12,10 @@ class AppConstants {
   // Supabase table names
   static const String supabaseTasksTable = 'tasks';
   static const String supabaseSessionsTable = 'sessions';
+  static const String supabaseUsersTable = 'users';
+
+  // Supabase RPC function names
+  static const String supabaseRedeemPromoFn = 'redeem_promo_code';
 
   // Shared preferences keys
   static const String prefDarkMode = 'dark_mode';

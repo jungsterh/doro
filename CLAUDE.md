@@ -22,7 +22,7 @@ Flag any new analyzer warnings before marking a task done. If a test must be ski
 
 ## Rules
 - Never auto-commit
-- SQL migrations: `supabase/migrations/` numbered sequentially — **next: 015_**
+- SQL migrations: `supabase/migrations/` numbered sequentially — **next: 006_**
 - Always use `(SELECT auth.uid())` in RLS policies, never bare `auth.uid()`
 - Null safety strict; `debugPrint` not `print()`
 - Never use `BuildContext` across async gaps — guard with `mounted` check
