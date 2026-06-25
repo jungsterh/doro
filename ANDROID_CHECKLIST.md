@@ -24,10 +24,8 @@ Complete these before distributing to testers.
 
 ## 2. Play Console — App Setup
 
-- [ ] Create app in [Play Console](https://play.google.com/console) (`com.doro.doro`)
+- [ ] Create app in [Play Console](https://play.google.com/console) (`com.elanordigital.doro`)
 - [ ] Complete: Store listing, Content rating, Data safety form, Privacy policy URL
-- [ ] Note: personal developer accounts created after Nov 2023 must run a closed test
-      with 12+ testers for 14 days before production access
 
 ## 3. Play Console — Subscriptions
 
@@ -36,7 +34,7 @@ Complete these before distributing to testers.
   | Subscription ID | Base plan | Price |
   |---|---|---|
   | `doro_premium_monthly` | monthly auto-renewing | $1.99 / month |
-  | `doro_premium_yearly` | yearly auto-renewing | $11.99 / year |
+  | `doro_premium_yearly` | yearly auto-renewing | $12.99 / year |
 
   IDs must match `AppConstants.iapMonthlyId` / `iapYearlyId` exactly.
   Keep ONE base plan per subscription (in_app_purchase maps product ID = subscription ID).
@@ -46,8 +44,8 @@ Complete these before distributing to testers.
 
 - [ ] Upload signed AAB to Testing → Internal testing (subscriptions don't work until
       the app exists on a track)
-- [ ] Add tester emails (up to 100), share the opt-in link
-- [ ] Testers install via the opt-in link from Play Store
+- [x] Add tester emails (up to 100), share the opt-in link
+- [x] Testers install via the opt-in link from Play Store
 
 ## 5. License Testers (free test purchases)
 
