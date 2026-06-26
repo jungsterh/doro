@@ -111,6 +111,17 @@ class SessionService {
     return _db.deleteSession(id);
   }
 
+  /// Updates the note on an already-saved [session].
+  /// An empty/whitespace comment clears the note.
+  Future<Session> updateComment(Session session, String comment) async {
+    final trimmed = comment.trim();
+    final updated = trimmed.isEmpty
+        ? session.copyWith(clearComment: true)
+        : session.copyWith(comment: trimmed);
+    await _db.updateSession(updated);
+    return updated;
+  }
+
   String _generateId() {
     return '${DateTime.now().microsecondsSinceEpoch}';
   }

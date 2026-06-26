@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/duration_formatter.dart';
 import '../../models/session.dart';
 import '../../models/task.dart';
+import '../../providers/session_provider.dart';
 import '../../widgets/glass_card.dart';
 
-class SessionDetailPage extends StatelessWidget {
+class SessionDetailPage extends ConsumerStatefulWidget {
   final Session session;
   final Task? task;
 
@@ -17,6 +19,48 @@ class SessionDetailPage extends StatelessWidget {
   });
 
   @override
+  ConsumerState<SessionDetailPage> createState() => _SessionDetailPageState();
+}
+
+class _SessionDetailPageState extends ConsumerState<SessionDetailPage> {
+  late Session _session = widget.session;
+  late final TextEditingController _noteController =
+      TextEditingController(text: _session.comment ?? '');
+  bool _editing = false;
+  bool _saving = false;
+
+  Task? get task => widget.task;
+
+  @override
+  void dispose() {
+    _noteController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _saveNote() async {
+    setState(() => _saving = true);
+    final updated = await ref
+        .read(activeSessionProvider.notifier)
+        .updateSessionComment(_session, _noteController.text);
+    ref.invalidate(sessionsProvider);
+    ref.invalidate(sessionsByTaskProvider(_session.taskId));
+    if (!mounted) return;
+    setState(() {
+      _session = updated;
+      _noteController.text = updated.comment ?? '';
+      _editing = false;
+      _saving = false;
+    });
+  }
+
+  void _cancelEdit() {
+    setState(() {
+      _noteController.text = _session.comment ?? '';
+      _editing = false;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final accent = Theme.of(context).colorScheme.primary;
@@ -25,8 +69,8 @@ class SessionDetailPage extends StatelessWidget {
     final dateFmt = DateFormat('EEEE, MMMM d, yyyy');
     final timeFmt = DateFormat('h:mm a');
 
-    final startTime = session.startTime;
-    final endTime = session.endTime;
+    final startTime = _session.startTime;
+    final endTime = _session.endTime;
 
     return Scaffold(
       backgroundColor:
@@ -42,6 +86,14 @@ class SessionDetailPage extends StatelessWidget {
                 onPressed: () => Navigator.pop(context),
               ),
               title: const Text('Session Detail'),
+              actions: [
+                if (!_editing)
+                  IconButton(
+                    icon: const Icon(Icons.edit_outlined),
+                    tooltip: 'Edit note',
+                    onPressed: () => setState(() => _editing = true),
+                  ),
+              ],
             ),
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
@@ -77,7 +129,7 @@ class SessionDetailPage extends StatelessWidget {
                           const SizedBox(height: 12),
                         ],
                         Text(
-                          DurationFormatter.fromSeconds(session.durationSeconds),
+                          DurationFormatter.fromSeconds(_session.durationSeconds),
                           style: Theme.of(context)
                               .textTheme
                               .displaySmall
@@ -126,7 +178,7 @@ class SessionDetailPage extends StatelessWidget {
                         _InfoRow(
                           icon: Icons.timer_outlined,
                           label: 'Duration',
-                          value: DurationFormatter.formatHuman(session.duration),
+                          value: DurationFormatter.formatHuman(_session.duration),
                           isDark: isDark,
                           secondaryColor: secondaryColor,
                           valueColor: accent,
@@ -156,17 +208,58 @@ class SessionDetailPage extends StatelessWidget {
                           ],
                         ),
                         const SizedBox(height: 10),
-                        Text(
-                          session.comment?.trim().isNotEmpty == true
-                              ? session.comment!
-                              : 'No notes for this session.',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: session.comment?.trim().isNotEmpty == true
-                                    ? null
-                                    : secondaryColor,
-                                height: 1.5,
+                        if (_editing) ...[
+                          TextField(
+                            controller: _noteController,
+                            maxLines: 4,
+                            autofocus: true,
+                            enabled: !_saving,
+                            decoration: InputDecoration(
+                              hintText: 'Add a note about this session...',
+                              border: const OutlineInputBorder(),
+                              hintStyle: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(color: secondaryColor),
+                            ),
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                          const SizedBox(height: 10),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              TextButton(
+                                onPressed: _saving ? null : _cancelEdit,
+                                child: const Text('Cancel'),
                               ),
-                        ),
+                              const SizedBox(width: 8),
+                              FilledButton(
+                                onPressed: _saving ? null : _saveNote,
+                                child: _saving
+                                    ? const SizedBox(
+                                        width: 16,
+                                        height: 16,
+                                        child: CircularProgressIndicator(
+                                            strokeWidth: 2),
+                                      )
+                                    : const Text('Save'),
+                              ),
+                            ],
+                          ),
+                        ] else
+                          Text(
+                            _session.comment?.trim().isNotEmpty == true
+                                ? _session.comment!
+                                : 'No notes for this session.',
+                            style:
+                                Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                      color: _session.comment?.trim().isNotEmpty ==
+                                              true
+                                          ? null
+                                          : secondaryColor,
+                                      height: 1.5,
+                                    ),
+                          ),
                       ],
                     ),
                   ),

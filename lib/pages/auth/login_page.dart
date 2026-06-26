@@ -31,10 +31,16 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         await ref.read(authProvider.notifier).signInWithApple();
       }
 
-      // After successful sign-in, mark onboarding as done
-      if (mounted && ref.read(authProvider).isAuthenticated) {
+      if (!mounted) return;
+      if (ref.read(authProvider).isAuthenticated) {
+        // Mark onboarding done, then drop LoginPage so app.dart's root route
+        // (now HomePage / SubscriptionBenefitPage) becomes visible.
         await ref.read(onboardingProvider.notifier).markOnboardingDone();
-        // Navigation will be handled automatically by app.dart routing
+        if (!mounted) return;
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      } else {
+        // User cancelled the picker — return to the previous screen.
+        Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {

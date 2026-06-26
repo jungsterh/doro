@@ -7,7 +7,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/config/supabase_config.dart';
 import '../core/constants/app_constants.dart';
 import '../providers/premium_provider.dart';
-import 'sync_service.dart';
 
 /// Wraps the in_app_purchase plugin and grants premium on valid purchases.
 ///

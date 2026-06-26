@@ -2,7 +2,7 @@
 
 Step-by-step for your **Mac**. Assumes Apple Developer Program is active and the app record already exists in App Store Connect.
 
-- **Bundle ID:** `com.doro.doro`
+- **Bundle ID:** `com.elanordigital.doro`
 - **Current version:** `1.0.0+2` (marketing `1.0.0`, build `2`)
 - **Method:** Archive in Xcode → upload via Organizer
 
@@ -12,7 +12,7 @@ Step-by-step for your **Mac**. Assumes Apple Developer Program is active and the
 
 ## 0. Confirm the App Store Connect record matches
 
-In [App Store Connect](https://appstoreconnect.apple.com) → My Apps → Doro, verify the bundle ID is exactly `com.doro.doro`. If the record was created with a different ID, either fix it here or update `PRODUCT_BUNDLE_IDENTIFIER` in Xcode — they must match or the upload is rejected.
+In [App Store Connect](https://appstoreconnect.apple.com) → My Apps → Doro, verify the bundle ID is exactly `com.elanordigital.doro`. If the record was created with a different ID, either fix it here or update `PRODUCT_BUNDLE_IDENTIFIER` in Xcode — they must match or the upload is rejected.
 
 ---
 
@@ -59,7 +59,7 @@ Open the **.xcworkspace**, not the .xcodeproj (CocoaPods won't link otherwise).
 1. Select the **Runner** project → **Runner** target → **Signing & Capabilities**.
 2. Check **Automatically manage signing**.
 3. Set **Team** to your Apple Developer team (the team field is currently empty in the project).
-4. Confirm **Bundle Identifier** = `com.doro.doro`.
+4. Confirm **Bundle Identifier** = `com.elanordigital.doro`.
 5. Xcode will create/download the provisioning profile. Resolve any red errors here before continuing.
 6. While you're here, confirm the **Sign In with Apple** capability is present (required because the app offers Google Sign-In).
 

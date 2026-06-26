@@ -111,6 +111,16 @@ class ActiveSessionNotifier extends StateNotifier<ActiveSessionState> {
     state = const ActiveSessionState();
   }
 
+  /// Updates the note on an already-completed session and syncs in the
+  /// background. Returns the updated session.
+  Future<Session> updateSessionComment(Session session, String comment) async {
+    final updated = await _service.updateComment(session, comment);
+    _ref.read(syncServiceProvider).syncToSupabase().catchError(
+          (Object e) => debugPrint('Background sync error: $e'),
+        );
+    return updated;
+  }
+
   void _startTimer() {
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {

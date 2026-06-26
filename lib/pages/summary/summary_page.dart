@@ -19,8 +19,8 @@ class SummaryPage extends ConsumerStatefulWidget {
 }
 
 class _SummaryPageState extends ConsumerState<SummaryPage> {
-  final _commentController = TextEditingController();
-  bool _saved = false;
+  late final TextEditingController _commentController =
+      TextEditingController(text: widget.session.comment ?? '');
 
   @override
   void dispose() {
@@ -119,10 +119,13 @@ class _SummaryPageState extends ConsumerState<SummaryPage> {
   }
 
   Future<void> _done() async {
-    if (!_saved && _commentController.text.trim().isNotEmpty) {
-      // Comment is already saved during stopSession; this handles
-      // late edits if the user edits after the page is shown.
-      _saved = true;
+    // The session was saved with no note when the timer stopped, so persist
+    // whatever the user typed here before leaving.
+    final text = _commentController.text;
+    if (text.trim() != (widget.session.comment ?? '')) {
+      await ref
+          .read(activeSessionProvider.notifier)
+          .updateSessionComment(widget.session, text);
     }
     // Refresh sessions on home
     ref.invalidate(sessionsProvider);
