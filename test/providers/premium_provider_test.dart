@@ -85,7 +85,8 @@ void main() {
         final container = ProviderContainer();
         addTearDown(container.dispose);
 
-        await Future.delayed(Duration.zero); // allow async _load()
+        container.read(premiumProvider); // trigger notifier creation + _load()
+        await Future.delayed(Duration.zero); // allow async _load() to complete
         expect(container.read(premiumProvider), isTrue);
       });
 
@@ -96,7 +97,8 @@ void main() {
         final container = ProviderContainer();
         addTearDown(container.dispose);
 
-        await Future.delayed(Duration.zero);
+        container.read(premiumProvider); // trigger notifier creation + _load()
+        await Future.delayed(Duration.zero); // allow async _load() to complete
         expect(container.read(premiumProvider), isFalse);
       });
     });
