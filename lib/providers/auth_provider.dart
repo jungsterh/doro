@@ -1,9 +1,15 @@
+import 'dart:convert';
+import 'dart:math';
+
+import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide User;
 import '../models/user.dart';
 import 'premium_provider.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
+import '../services/sync_service.dart';
 
 class AuthState {
   final User? user;
@@ -178,8 +184,29 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  // ── Nonce helpers for Apple Sign-In ──────────────────────────────────────
+
+  String _generateNonce([int length = 32]) {
+    const charset =
+        '0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._';
+    final random = Random.secure();
+    return List.generate(
+      length,
+      (_) => charset[random.nextInt(charset.length)],
+    ).join();
+  }
+
+  String _sha256ofString(String input) {
+    final bytes = utf8.encode(input);
+    final digest = sha256.convert(bytes);
+    return digest.toString();
+  }
+
+  // ── Sign-in methods ───────────────────────────────────────────────────────
+
   /// Sign in with Google using the native Google Sign-In SDK.
   /// Gets an ID token from Google, then exchanges it for a Supabase session.
+  /// On success, syncs local data up and remote data down.
   Future<void> signInWithGoogle() async {
     try {
       state = state.copyWith(isLoading: true, error: null);
@@ -219,6 +246,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         }
 
         await _loadUserFromSupabase(supabaseUser.id);
+        await _syncAfterSignIn();
       }
     } catch (e) {
       state = state.copyWith(
@@ -230,24 +258,35 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  /// Sign in with Apple
+  /// Sign in with Apple using the native Sign In with Apple sheet.
+  /// Gets an identity token from Apple, then exchanges it for a Supabase session.
+  /// On success, syncs local data up and remote data down.
   Future<void> signInWithApple() async {
     try {
       state = state.copyWith(isLoading: true, error: null);
 
-      final response = await _supabase!.client.auth.signInWithOAuth(
-        OAuthProvider.apple,
+      final rawNonce = _generateNonce();
+      final hashedNonce = _sha256ofString(rawNonce);
+
+      final appleCredential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+        nonce: hashedNonce,
       );
 
-      if (!response) {
-        throw Exception('Apple sign-in failed');
-      }
+      final idToken = appleCredential.identityToken;
+      if (idToken == null) throw Exception('No identity token from Apple');
 
-      await Future.delayed(Duration(milliseconds: 500));
+      final response = await _supabase!.client.auth.signInWithIdToken(
+        provider: OAuthProvider.apple,
+        idToken: idToken,
+        nonce: rawNonce,
+      );
 
-      final session = _supabase.client.auth.currentSession;
-      if (session != null) {
-        final supabaseUser = session.user;
+      final supabaseUser = response.user;
+      if (supabaseUser != null) {
         final existingUser = await _supabase.client
             .from('users')
             .select()
@@ -255,15 +294,34 @@ class AuthNotifier extends StateNotifier<AuthState> {
             .maybeSingle();
 
         if (existingUser == null) {
+          // Apple only provides name on the first sign-in
+          final fullName = [
+            appleCredential.givenName,
+            appleCredential.familyName,
+          ].whereType<String>().join(' ').trim();
+
           await _createUserRecord(
             supabaseUser.id,
-            supabaseUser.email ?? '',
-            supabaseUser.userMetadata?['name'] as String?,
+            supabaseUser.email ?? appleCredential.email ?? '',
+            fullName.isEmpty ? null : fullName,
           );
         }
 
         await _loadUserFromSupabase(supabaseUser.id);
+        await _syncAfterSignIn();
       }
+    } on SignInWithAppleAuthorizationException catch (e) {
+      // User cancelled — treat as non-error
+      if (e.code == AuthorizationErrorCode.canceled) {
+        state = state.copyWith(isLoading: false);
+        return;
+      }
+      state = state.copyWith(
+        isLoading: false,
+        error: 'Apple sign-in failed: ${e.message}',
+      );
+      debugPrint('Apple sign-in error: $e');
+      rethrow;
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
@@ -271,6 +329,18 @@ class AuthNotifier extends StateNotifier<AuthState> {
       );
       debugPrint('Apple sign-in error: $e');
       rethrow;
+    }
+  }
+
+  /// Push local data up then pull remote data down after a successful sign-in.
+  /// Errors are swallowed so they don't block the auth flow.
+  Future<void> _syncAfterSignIn() async {
+    try {
+      final sync = SyncService();
+      await sync.syncToSupabase();
+      await sync.syncFromSupabase();
+    } catch (e) {
+      debugPrint('Post-sign-in sync error: $e');
     }
   }
 

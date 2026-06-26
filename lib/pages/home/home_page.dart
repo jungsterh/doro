@@ -9,6 +9,8 @@ import '../../providers/sync_provider.dart';
 import '../../providers/task_provider.dart';
 import '../../services/export_service.dart';
 import '../../widgets/glass_card.dart';
+import '../../widgets/startup_guide_overlay.dart';
+import '../../widgets/sync_nudge_banner.dart';
 import '../premium/premium_page.dart';
 import '../settings/settings_page.dart';
 import 'widgets/activity_pie_chart.dart';
@@ -98,6 +100,8 @@ class _HomePageState extends ConsumerState<HomePage>
             ),
           ),
 
+          // First-run guide — renders on top of everything, dismisses itself
+          const StartupGuideOverlay(),
         ],
       ),
     );
@@ -117,56 +121,70 @@ class _StartPage extends ConsumerWidget {
         MediaQuery.of(context).orientation == Orientation.landscape;
 
     return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(height: isLandscape ? 12 : 16),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Column(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Sync nudge — spans full width with its own horizontal margin
+          const SyncNudgeBanner(),
+          // Main content with standard horizontal padding
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(height: isLandscape ? 12 : 16),
+                  Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        greeting,
-                        style: Theme.of(context)
-                            .textTheme
-                            .headlineMedium
-                            ?.copyWith(fontWeight: FontWeight.w700),
-                      ),
-                      if (!isLandscape)
-                        Text(
-                          dateStr,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: isDark
-                                    ? AppColors.darkTextSecondary
-                                    : AppColors.lightTextSecondary,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              greeting,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .headlineMedium
+                                  ?.copyWith(fontWeight: FontWeight.w700),
+                            ),
+                            if (!isLandscape)
+                              Text(
+                                dateStr,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(
+                                      color: isDark
+                                          ? AppColors.darkTextSecondary
+                                          : AppColors.lightTextSecondary,
+                                    ),
                               ),
+                          ],
                         ),
+                      ),
+                      IconButton(
+                        icon: Icon(
+                          Icons.settings_outlined,
+                          color: isDark
+                              ? AppColors.darkTextSecondary
+                              : AppColors.lightTextSecondary,
+                        ),
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const SettingsPage()),
+                        ),
+                      ),
                     ],
                   ),
-                ),
-                IconButton(
-                  icon: Icon(
-                    Icons.settings_outlined,
-                    color: isDark
-                        ? AppColors.darkTextSecondary
-                        : AppColors.lightTextSecondary,
-                  ),
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const SettingsPage()),
-                  ),
-                ),
-              ],
+                  SizedBox(height: isLandscape ? 8 : 24),
+                  const Expanded(child: StartTaskPanel()),
+                ],
+              ),
             ),
-            SizedBox(height: isLandscape ? 8 : 24),
-            const Expanded(child: StartTaskPanel()),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

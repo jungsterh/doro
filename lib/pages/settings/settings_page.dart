@@ -509,23 +509,26 @@ class _DisplayModeCard extends ConsumerWidget {
             subtitle: Text(mode == DisplayMode.flip ? 'Flip card' : 'Digital'),
           ),
           const Divider(height: 1),
-          RadioListTile<DisplayMode>(
-            value: DisplayMode.digital,
+          RadioGroup<DisplayMode>(
             groupValue: mode,
             onChanged: (v) =>
                 ref.read(displayModeProvider.notifier).setMode(v!),
-            title: const Text('Digital'),
-            subtitle: const Text('Clean numeric display'),
-            secondary: const Icon(Icons.looks_one_outlined),
-          ),
-          RadioListTile<DisplayMode>(
-            value: DisplayMode.flip,
-            groupValue: mode,
-            onChanged: (v) =>
-                ref.read(displayModeProvider.notifier).setMode(v!),
-            title: const Text('Flip Card'),
-            subtitle: const Text('Animated split-flap cards'),
-            secondary: const Icon(Icons.style_outlined),
+            child: Column(
+              children: const [
+                RadioListTile<DisplayMode>(
+                  value: DisplayMode.digital,
+                  title: Text('Digital'),
+                  subtitle: Text('Clean numeric display'),
+                  secondary: Icon(Icons.looks_one_outlined),
+                ),
+                RadioListTile<DisplayMode>(
+                  value: DisplayMode.flip,
+                  title: Text('Flip Card'),
+                  subtitle: Text('Animated split-flap cards'),
+                  secondary: Icon(Icons.style_outlined),
+                ),
+              ],
+            ),
           ),
         ],
       ),

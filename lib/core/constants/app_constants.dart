@@ -28,6 +28,8 @@ class AppConstants {
   static const String prefLastSync = 'last_sync';
   static const String prefLockModeEnabled = 'lock_mode_enabled';
   static const String prefDateRangeIndex = 'date_range_index';
+  static const String prefSyncNudgeDismissed = 'sync_nudge_dismissed';
+  static const String prefAppGuideDone = 'app_guide_done';
 
   // Free tier: sessions visible up to this many days back
   static const int freeTierHistoryDays = 30;

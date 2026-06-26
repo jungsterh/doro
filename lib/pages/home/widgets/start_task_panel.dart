@@ -331,7 +331,7 @@ class _StartTaskPanelState extends ConsumerState<StartTaskPanel> {
             value: lockEnabled,
             onChanged: (value) =>
                 ref.read(lockModeProvider.notifier).setEnabled(value),
-            activeColor: accent,
+            activeThumbColor: accent,
             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
         ],
