@@ -22,7 +22,7 @@ class SplashScreen extends StatelessWidget {
             flex: 1,
             child: Center(
               child: Image.asset(
-                'assets/images/doro_icon.png',
+                'assets/icon/doro_icon.png',
                 width: 100,
                 height: 100,
                 fit: BoxFit.contain,

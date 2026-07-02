@@ -6,6 +6,8 @@ Step-by-step for your **Mac**. Assumes Apple Developer Program is active and the
 - **Current version:** `1.0.0+2` (marketing `1.0.0`, build `2`)
 - **Method:** Archive in Xcode → upload via Organizer
 
+> **Status (2026-07-01):** ✅ First deploy done — build uploaded, processed, installed on device via TestFlight, and added to a closed testing group. Google Sign-In confirmed working in the TestFlight build. This doc is now the repeat loop — see "Next time (the short loop)" below.
+
 > One-time prerequisites (Firebase plist, Sign In with Apple capability, Apple OAuth in Supabase, subscriptions) live in `IOS_CHECKLIST.md`. Do those first if you haven't — a build missing them will install but Google/Apple sign-in and IAP will fail. The steps below are the build-and-ship loop.
 
 ---

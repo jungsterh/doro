@@ -2,6 +2,8 @@
 
 Complete these before distributing to testers.
 
+> **Status (2026-07-01):** App is live on a **closed testing** track in Play Console. Testers installed via opt-in link; Google Sign-In verified working. Remaining: subscriptions setup, license testers, purchase test pass.
+
 ---
 
 ## 1. Release Signing (BLOCKER — currently signed with debug key)
@@ -24,7 +26,7 @@ Complete these before distributing to testers.
 
 ## 2. Play Console — App Setup
 
-- [ ] Create app in [Play Console](https://play.google.com/console) (`com.elanordigital.doro`)
+- [x] Create app in [Play Console](https://play.google.com/console) (`com.elanordigital.doro`)
 - [ ] Complete: Store listing, Content rating, Data safety form, Privacy policy URL
 
 ## 3. Play Console — Subscriptions
@@ -40,9 +42,9 @@ Complete these before distributing to testers.
   Keep ONE base plan per subscription (in_app_purchase maps product ID = subscription ID).
 - [ ] Activate both subscriptions
 
-## 4. Internal Testing Track
+## 4. Testing Track
 
-- [ ] Upload signed AAB to Testing → Internal testing (subscriptions don't work until
+- [x] Upload signed AAB to Testing → Closed testing (subscriptions don't work until
       the app exists on a track)
 - [x] Add tester emails (up to 100), share the opt-in link
 - [x] Testers install via the opt-in link from Play Store
@@ -62,5 +64,5 @@ Complete these before distributing to testers.
 - [ ] Verify app revokes premium after expiry (PurchaseService revokes on Android
       when startup restore returns no active subscription)
 - [ ] Restore purchases after reinstall
-- [ ] Google Sign-In on device + Play-Store-enabled emulator
+- [x] Google Sign-In on device + Play-Store-enabled emulator
 - [ ] Sync round-trip (premium account, two devices)

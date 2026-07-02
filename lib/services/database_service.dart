@@ -176,6 +176,13 @@ class DatabaseService {
     );
   }
 
+  /// Wipes all locally cached tasks and sessions. Used on account deletion.
+  Future<void> clearAllData() async {
+    final db = await database;
+    await db.delete(AppConstants.sessionsTable);
+    await db.delete(AppConstants.tasksTable);
+  }
+
   Future<void> close() async {
     final db = await database;
     await db.close();

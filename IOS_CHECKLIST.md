@@ -2,16 +2,18 @@
 
 Complete these on your Mac before submitting to the App Store.
 
+> **Status (2026-07-01):** First build uploaded, installed via **TestFlight**, and distributed to a closed testing group. Google Sign-In verified working on device — Firebase plist + URL scheme confirmed good. Remaining: Sign In with Apple, Supabase Apple OAuth, subscriptions.
+
 ---
 
 ## Firebase & Google Sign-In
 
-- [ ] Place `GoogleService-Info.plist` inside `ios/Runner/` in Xcode
+- [x] Place `GoogleService-Info.plist` inside `ios/Runner/` in Xcode
   - Open `ios/Runner.xcworkspace` in Xcode
   - Right-click `Runner` folder → Add Files to "Runner"
   - Select `GoogleService-Info.plist`, check **"Copy items if needed"** and **"Add to targets: Runner"**
-- [ ] Verify `CLIENT_ID` is present in `GoogleService-Info.plist` (needed by `google_sign_in`)
-- [ ] Add the reversed client ID as a URL scheme in Xcode
+- [x] Verify `CLIENT_ID` is present in `GoogleService-Info.plist` (needed by `google_sign_in`)
+- [x] Add the reversed client ID as a URL scheme in Xcode
   - `Runner` target → Info → URL Types → `+`
   - URL Schemes: paste the value of `REVERSED_CLIENT_ID` from `GoogleService-Info.plist`
   - Identifier: `com.google.reverseClientId`
@@ -55,9 +57,9 @@ Complete these on your Mac before submitting to the App Store.
 
 ## Build & Test
 
-- [ ] Run `flutter pub get` after pulling latest changes (firebase_core was added)
-- [ ] Run `flutter build ios` and confirm zero errors
-- [ ] Test Google Sign-In on a physical device (simulator does not support Google Sign-In)
+- [x] Run `flutter pub get` after pulling latest changes (firebase_core was added)
+- [x] Run `flutter build ios` and confirm zero errors
+- [x] Test Google Sign-In on a physical device (simulator does not support Google Sign-In)
 - [ ] Test Sign In with Apple on a physical device (requires a real Apple ID)
 - [ ] Test subscription purchase in sandbox (use a Sandbox Tester account from App Store Connect)
 - [ ] Test restore purchases after reinstall

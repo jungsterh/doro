@@ -16,6 +16,7 @@ class AppConstants {
 
   // Supabase RPC function names
   static const String supabaseRedeemPromoFn = 'redeem_promo_code';
+  static const String supabaseDeleteAccountFn = 'delete_own_account';
 
   // Shared preferences keys
   static const String prefDarkMode = 'dark_mode';

@@ -20,7 +20,9 @@ val keystoreProperties = Properties().apply {
 
 android {
     namespace = "com.elanordigital.doro"
-    compileSdk = flutter.compileSdkVersion
+    // screen_brightness_android requires compiling against SDK 36; override
+    // Flutter's default (35). Higher compile SDKs are backward compatible.
+    compileSdk = 36
     ndkVersion = "27.0.12077973"
 
     compileOptions {
@@ -36,7 +38,8 @@ android {
         applicationId = "com.elanordigital.doro"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        // firebase_core requires minSdk 23; override Flutter's default.
+        minSdk = 23
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName

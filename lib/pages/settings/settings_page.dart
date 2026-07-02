@@ -85,6 +85,16 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                       iconColor: AppColors.error,
                       onTap: _showSignOutDialog,
                     ),
+                    const Divider(height: 1),
+                    ListTile(
+                      leading: const Icon(Icons.delete_forever_outlined),
+                      title: const Text('Delete Account'),
+                      subtitle: const Text(
+                          'Permanently delete your account and all data'),
+                      textColor: AppColors.error,
+                      iconColor: AppColors.error,
+                      onTap: _showDeleteAccountDialog,
+                    ),
                   ],
                 ),
               ),
@@ -313,6 +323,50 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           ),
         );
       }
+    }
+  }
+
+  Future<void> _showDeleteAccountDialog() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Account?'),
+        content: const Text(
+          'This permanently deletes your account and all associated data — '
+          'your sessions, tasks, notes and history — across all your devices.\n\n'
+          'This cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Delete',
+                style: TextStyle(color: AppColors.error)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    try {
+      await ref.read(authProvider.notifier).deleteAccount();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Your account and data have been deleted')),
+      );
+      Navigator.pop(context);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Account deletion failed: $e'),
+          backgroundColor: AppColors.error,
+        ),
+      );
     }
   }
 

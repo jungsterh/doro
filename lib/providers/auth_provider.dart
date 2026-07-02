@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:math';
 
 import 'package:crypto/crypto.dart';
@@ -6,6 +8,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide User;
+import '../core/config/google_config.dart';
 import '../models/user.dart';
 import 'premium_provider.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
@@ -40,6 +43,16 @@ class AuthState {
 class AuthNotifier extends StateNotifier<AuthState> {
   final Supabase? _supabase;
   final Ref? _ref;
+
+  // Google OAuth client IDs live in .env, read via [GoogleConfig].
+
+  // google_sign_in 7.x requires initialize() to run exactly once per launch.
+  static bool _googleInitialized = false;
+
+  // Deep link for the Android Apple OAuth callback. Must match both an entry in
+  // Supabase Auth → URL Configuration → Redirect URLs and the intent-filter in
+  // android/app/src/main/AndroidManifest.xml.
+  static const _appleAndroidRedirect = 'com.elanordigital.doro://login-callback';
 
   AuthNotifier(Supabase supabase, Ref ref)
       : _supabase = supabase,
@@ -211,22 +224,26 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       state = state.copyWith(isLoading: true, error: null);
 
-      final googleSignIn = GoogleSignIn();
-      final googleUser = await googleSignIn.signIn();
-      if (googleUser == null) {
-        // User cancelled the picker
-        state = state.copyWith(isLoading: false);
-        return;
+      // google_sign_in 7.x: initialize the singleton once, then authenticate.
+      // serverClientId fixes the token's `aud` to the web client Supabase
+      // accepts; clientId identifies the native iOS app (Android uses SHA-1).
+      final googleSignIn = GoogleSignIn.instance;
+      if (!_googleInitialized) {
+        await googleSignIn.initialize(
+          clientId: Platform.isIOS ? GoogleConfig.iosClientId : null,
+          serverClientId: GoogleConfig.serverClientId,
+        );
+        _googleInitialized = true;
       }
 
-      final googleAuth = await googleUser.authentication;
-      final idToken = googleAuth.idToken;
+      final googleUser = await googleSignIn.authenticate();
+
+      final idToken = googleUser.authentication.idToken;
       if (idToken == null) throw Exception('No ID token from Google');
 
       final response = await _supabase!.client.auth.signInWithIdToken(
         provider: OAuthProvider.google,
         idToken: idToken,
-        accessToken: googleAuth.accessToken,
       );
 
       final supabaseUser = response.user;
@@ -248,6 +265,18 @@ class AuthNotifier extends StateNotifier<AuthState> {
         await _loadUserFromSupabase(supabaseUser.id);
         await _syncAfterSignIn();
       }
+    } on GoogleSignInException catch (e) {
+      // v7 throws on cancellation instead of returning null — treat as no-op.
+      if (e.code == GoogleSignInExceptionCode.canceled) {
+        state = state.copyWith(isLoading: false);
+        return;
+      }
+      state = state.copyWith(
+        isLoading: false,
+        error: 'Google sign-in failed: ${e.description ?? e.code.name}',
+      );
+      debugPrint('Google sign-in error: $e');
+      rethrow;
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
@@ -258,10 +287,18 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  /// Sign in with Apple using the native Sign In with Apple sheet.
-  /// Gets an identity token from Apple, then exchanges it for a Supabase session.
-  /// On success, syncs local data up and remote data down.
+  /// Sign in with Apple.
+  ///
+  /// iOS/macOS use the native Sign In with Apple sheet: an identity token is
+  /// obtained from Apple and exchanged for a Supabase session. Android has no
+  /// native sheet, so it falls back to Supabase's browser OAuth flow via
+  /// [_signInWithAppleAndroid]. On success, local data is synced up and remote
+  /// data down.
   Future<void> signInWithApple() async {
+    if (Platform.isAndroid) {
+      await _signInWithAppleAndroid();
+      return;
+    }
     try {
       state = state.copyWith(isLoading: true, error: null);
 
@@ -332,6 +369,41 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  /// Android Apple sign-in via Supabase's browser OAuth flow.
+  ///
+  /// Opens the system browser to Apple (through Supabase), which redirects back
+  /// to [_appleAndroidRedirect]. supabase_flutter intercepts that deep link and
+  /// completes the PKCE exchange, firing an `onAuthStateChange` signedIn event —
+  /// the listener in [_initializeAuthState] loads/creates the user record from
+  /// it. We wait for that event here so we can run the post-sign-in sync.
+  Future<void> _signInWithAppleAndroid() async {
+    try {
+      state = state.copyWith(isLoading: true, error: null);
+
+      await _supabase!.client.auth.signInWithOAuth(
+        OAuthProvider.apple,
+        redirectTo: _appleAndroidRedirect,
+      );
+
+      // The session arrives asynchronously via the deep link above.
+      await _supabase.client.auth.onAuthStateChange
+          .firstWhere((data) => data.event == AuthChangeEvent.signedIn)
+          .timeout(const Duration(minutes: 5));
+
+      await _syncAfterSignIn();
+    } on TimeoutException {
+      // Browser dismissed without completing sign-in — treat as a no-op.
+      state = state.copyWith(isLoading: false);
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: 'Apple sign-in failed: $e',
+      );
+      debugPrint('Apple sign-in error: $e');
+      rethrow;
+    }
+  }
+
   /// Push local data up then pull remote data down after a successful sign-in.
   /// Errors are swallowed so they don't block the auth flow.
   Future<void> _syncAfterSignIn() async {
@@ -349,7 +421,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       state = state.copyWith(isLoading: true, error: null);
       await _supabase!.client.auth.signOut();
-      await GoogleSignIn().disconnect().catchError((_) => null);
+      await GoogleSignIn.instance.disconnect().catchError((_) {});
       state = AuthState();
     } catch (e) {
       state = state.copyWith(
@@ -357,6 +429,38 @@ class AuthNotifier extends StateNotifier<AuthState> {
         error: 'Sign out failed: $e',
       );
       debugPrint('Sign out error: $e');
+      rethrow;
+    }
+  }
+
+  /// Permanently delete the account and all associated data.
+  ///
+  /// Deletes remote data via the `delete_own_account` RPC and wipes the local
+  /// cache, then clears the session. The Supabase session is already invalid
+  /// once the auth.users row is gone, so sign-out errors are swallowed.
+  Future<void> deleteAccount() async {
+    try {
+      state = state.copyWith(isLoading: true, error: null);
+
+      final sync = SyncService();
+      await sync.deleteAccount();
+
+      // Best-effort local session teardown — the remote user no longer exists.
+      try {
+        await _supabase?.client.auth.signOut();
+      } catch (_) {}
+      try {
+        await GoogleSignIn.instance.disconnect();
+      } catch (_) {}
+
+      await _setLocalPremium(false);
+      state = AuthState();
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: 'Account deletion failed: $e',
+      );
+      debugPrint('Account deletion error: $e');
       rethrow;
     }
   }

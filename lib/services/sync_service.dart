@@ -84,6 +84,24 @@ class SyncService {
     }
   }
 
+  /// Permanently deletes the signed-in user's account and all associated data.
+  /// Server-side: invokes the `delete_own_account` RPC, which removes the
+  /// auth.users row and cascades to users/tasks/sessions. Local: wipes the
+  /// SQLite cache and account-related preferences (UI prefs are preserved).
+  Future<void> deleteAccount() async {
+    final client = _supabase;
+    if (client != null && client.auth.currentUser != null) {
+      await client.rpc(AppConstants.supabaseDeleteAccountFn);
+    }
+
+    await _db.clearAllData();
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(AppConstants.prefLastSync);
+    await prefs.remove(AppConstants.prefRecentTaskIds);
+    await prefs.setBool(AppConstants.prefIsPremium, false);
+  }
+
   Future<DateTime?> getLastSyncTime() async {
     final prefs = await SharedPreferences.getInstance();
     final lastSync = prefs.getString(AppConstants.prefLastSync);
